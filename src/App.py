@@ -127,6 +127,29 @@ async def search_items(q: str = Query(..., min_length=1)):
             ]
         })
 
+        # Authors array match (2 points) - Bulletproofed with $ifNull
+        score_additions.append({
+            "$cond": [
+                {
+                    "$anyElementTrue": {
+                        "$map": {
+                            "input": {"$ifNull": ["$authors", []]},
+                            "as": "author",
+                            "in": {
+                                "$regexMatch": {
+                                    "input": {"$ifNull": ["$$author", ""]},
+                                    "regex": word,
+                                    "options": "i"
+                                }
+                            }
+                        }
+                    }
+                },
+                2,
+                0
+            ]
+        })
+
         # Keywords array match (1 point) - Bulletproofed with $ifNull
         score_additions.append({
             "$cond": [
